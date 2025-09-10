@@ -308,13 +308,13 @@ board.addEventListener('click', function (event) {
     set_square(squareToMove, null);
     squareToMove = null;
     highlight = null;
-    flip_board();
+    //flip_board();
     turn = Color.opposite(turn);
   } else if (squareToMove !== null && move_dir(get_tile(squareToMove)) && squares_equal(tile, empty_location)) {
     move_tile(get_tile(squareToMove), move_dir(get_tile(squareToMove))!);
     squareToMove = null;
     highlight = null;
-    flip_board();
+    //flip_board();
     turn = Color.opposite(turn);
   }
 }, false);
