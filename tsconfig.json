@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "strict": true,
+        "noImplicitAny": true,
+        "strictNullChecks": true,
+        "noEmitOnError": true,
+        "target": "es6",
+    },
+    "compileOnSave": true,
+    "include": ["*.ts"]
+}
