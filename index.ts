@@ -20,11 +20,7 @@ type FixedLengthArray<T, L extends number, TObj = [T, ...Array<T>]> =
     [Symbol.iterator]: () => IterableIterator<T>
   };
 
-// type UnmappedTile = FixedLengthArray<number, 2>;
-// type MappedTile = FixedLengthArray<number, 2>;
 type Tile = FixedLengthArray<number, 2>;
-// type UnmappedSquare = FixedLengthArray<number, 2>;
-// type MappedSquare = FixedLengthArray<number, 2>;
 type Square = FixedLengthArray<number, 2>;
 type CanvasPosition = FixedLengthArray<number, 2>;
 
@@ -107,36 +103,9 @@ var squares: FixedLengthArray<FixedLengthArray<[Piece, Color] | null, 8>, 8> = [
   [[Piece.Rook, Color.White], [Piece.Knight, Color.White], [Piece.Bishop, Color.White], [Piece.Queen, Color.White], [Piece.King, Color.White], [Piece.Bishop, Color.White], [Piece.Knight, Color.White], [Piece.Rook, Color.White]],
 ];
 
-// var mapping: FixedLengthArray<FixedLengthArray<MappedTile, 4>, 4> = [
-//   [[0, 0], [1, 0], [2, 0], [3, 0]],
-//   [[0, 1], [1, 1], [2, 1], [3, 1]],
-//   [[0, 2], [1, 2], [2, 2], [3, 2]],
-//   [[0, 3], [1, 3], [2, 3], [3, 3]]
-// ];
-
 var empty_location: Tile = [3, 2];
 
 var turn: Color = Color.White;
-
-// /**
-//  * Converts an unmapped tile to a mapped tile.
-//  * @param tile The tile.
-//  * @returns The mapped tile.
-//  */
-// function get_mapped_tile(tile: UnmappedTile): MappedTile {
-//   return mapping[tile[1]][tile[0]];
-// }
-
-// function get_unmapped_tile(tile: MappedTile): UnmappedTile {
-//   let pos: UnmappedTile = [-1, -1];
-//   for (const [y, x] of mapping.map((v) => v.findIndex((v) => squares_equal(v, tile))).entries()) {
-//     if (x > -1) {
-//       pos = [y, x];
-//       break;
-//     }
-//   }
-//   return pos;
-// }
 
 /**
  * Get the tile of the square.
@@ -147,34 +116,12 @@ function get_tile(sq: Square): Tile {
   return [Math.floor(sq[0] / 2), Math.floor(sq[1] / 2)];
 }
 
-// /**
-//  * Map a square based on its tile.
-//  * @param sq The base square.
-//  * @returns The mapped square.
-//  */
-// function map_square(sq: UnmappedSquare): MappedSquare {
-//   const tile = get_tile(sq);
-//   const mapped_tile = get_mapped_tile(tile);
-//   const tile_offset = [mapped_tile[0] - tile[0], mapped_tile[1] - tile[1]];
-//   const offset = [tile_offset[0] * 2, tile_offset[1] * 2];
-//   return [sq[0] + offset[0], sq[1] + offset[1]];
-// }
-
-// function unmap_square(sq: MappedSquare): UnmappedSquare {
-//   const tile = get_tile(sq);
-//   const unmapped_tile = get_unmapped_tile(tile);
-//   const tile_offset = [tile[0] - unmapped_tile[0], tile[1] - unmapped_tile[1]];
-//   const offset = [tile_offset[0] * 2, tile_offset[1] * 2];
-//   return [sq[0] - offset[0], sq[1] - offset[1]];
-// }
-
 /**
  * Get the value of an unmapped square after mapping it.
  * @param sq The square.
  * @returns The square's value.
  */
 function get_square(sq: Square): [Piece, Color] | null {
-  // const sq_offset = map_square(sq);
   return squares[sq[1]][sq[0]];
 }
 
@@ -187,7 +134,6 @@ function get_squares(tile: Tile): FixedLengthArray<FixedLengthArray<[Piece, Colo
 }
 
 function set_square(sq: Square, piece: [Piece, Color] | null) {
-  // const sq_offset = map_square(sq);
   squares[sq[1]][sq[0]] = piece;
 }
 
@@ -255,7 +201,6 @@ function squares_equal(square1: Square, square2: Square): boolean {
 
 function flip_board() {
   squares.reverse();
-  //mapping.reverse();
   empty_location = [empty_location[0], 3-empty_location[1]];
 }
 
@@ -343,37 +288,33 @@ function tick(delta: number) {
   requestAnimationFrame(tick);
 }
 
-function run() {
-  tick(0);
-  board.addEventListener('click', function (event) {
-    const square = offset_to_square([Math.floor(event.pageX - canvasLeft), Math.floor(event.pageY - canvasTop)]);
-    if (square[0] >= 64 || square[1] >= 64) {
-      return;
-    }
-    const tile = get_tile(square);
+tick(0);
+board.addEventListener('click', function (event) {
+  const square = offset_to_square([Math.floor(event.pageX - canvasLeft), Math.floor(event.pageY - canvasTop)]);
+  if (square[0] >= 64 || square[1] >= 64) {
+    return;
+  }
+  const tile = get_tile(square);
 
-    if (squareToMove === null && ((get_square(square) !== null && get_square(square)![1] == turn) || (move_dir(tile) && get_squares(tile).some((v) => v.some((v) => v !== null && v[1] === turn))))) {
-      squareToMove = square;
-      highlight = square;
-    } else if (squareToMove !== null && squares_equal(square, squareToMove)) {
-      squareToMove = null;
-      highlight = null;
-    } else if (squareToMove !== null && !squares_equal(tile, empty_location)) {
-      const piece = get_square(squareToMove);
-      set_square(square, piece);
-      set_square(squareToMove, null);
-      squareToMove = null;
-      highlight = null;
-      flip_board();
-      turn = Color.opposite(turn);
-    } else if (squareToMove !== null && move_dir(get_tile(squareToMove)) && squares_equal(tile, empty_location)) {
-      move_tile(get_tile(squareToMove), move_dir(get_tile(squareToMove))!);
-      squareToMove = null;
-      highlight = null;
-      flip_board();
-      turn = Color.opposite(turn);
-    }
-  }, false);
-}
-
-setTimeout(run, 50);
+  if (squareToMove === null && ((get_square(square) !== null && get_square(square)![1] == turn) || (move_dir(tile) && get_squares(tile).some((v) => v.some((v) => v !== null && v[1] === turn))))) {
+    squareToMove = square;
+    highlight = square;
+  } else if (squareToMove !== null && squares_equal(square, squareToMove)) {
+    squareToMove = null;
+    highlight = null;
+  } else if (squareToMove !== null && !squares_equal(tile, empty_location)) {
+    const piece = get_square(squareToMove);
+    set_square(square, piece);
+    set_square(squareToMove, null);
+    squareToMove = null;
+    highlight = null;
+    flip_board();
+    turn = Color.opposite(turn);
+  } else if (squareToMove !== null && move_dir(get_tile(squareToMove)) && squares_equal(tile, empty_location)) {
+    move_tile(get_tile(squareToMove), move_dir(get_tile(squareToMove))!);
+    squareToMove = null;
+    highlight = null;
+    flip_board();
+    turn = Color.opposite(turn);
+  }
+}, false);
