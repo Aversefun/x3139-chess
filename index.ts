@@ -1,3 +1,5 @@
+console.log("X3139 Chess is open source at https://github.com/Aversefun/x3139-chess!")
+
 const board: HTMLCanvasElement = <HTMLCanvasElement>document.getElementById("board")!;
 const ctx = board.getContext("2d")!;
 
@@ -298,10 +300,10 @@ function get_allowed_moves(piece: [Piece, Color], from: Square, ignore_check: bo
 
         case Color.White:
           if (!only_capturing) {
-            if (get_square([from[0], from[1]-1]) === null) {
+            if (get_square([from[0], from[1] - 1]) === null) {
               allowed_movements = [[0, -1]];
               if (!moved_pieces[from[1]][from[0]]) {
-                if (get_square([from[0], from[1]-2]) === null) {
+                if (get_square([from[0], from[1] - 2]) === null) {
                   allowed_movements.push([0, -2]);
                 }
               }
@@ -383,7 +385,7 @@ function get_allowed_moves(piece: [Piece, Color], from: Square, ignore_check: bo
             movement_dirs[MoveDirection.Left].push([-2, 0]);
           }
           break;
-      
+
         case Color.Black:
           if (!moved_pieces[0][7]) {
             movement_dirs[MoveDirection.Right].push([2, 0]);
@@ -649,36 +651,36 @@ board.addEventListener('click', function (event) {
       switch (turn) {
         case Color.White:
           if (squares_equal(squareToMove, [4, 7]) && squares_equal(square, [6, 7])) {
-            set_square([squareToMove[0]+1, squareToMove[1]], [Piece.Rook, Color.White]);
+            set_square([squareToMove[0] + 1, squareToMove[1]], [Piece.Rook, Color.White]);
             set_square([7, 7], null);
           } else if (squares_equal(squareToMove, [4, 7]) && squares_equal(square, [0, 7])) {
-            set_square([squareToMove[0]-1, squareToMove[1]], [Piece.Rook, Color.White]);
+            set_square([squareToMove[0] - 1, squareToMove[1]], [Piece.Rook, Color.White]);
             set_square([0, 7], null);
           }
           break;
-      
+
         case Color.Black:
           if (squares_equal(squareToMove, [4, 0]) && squares_equal(square, [6, 0])) {
-            set_square([squareToMove[0]+1, squareToMove[1]], [Piece.Rook, Color.Black]);
+            set_square([squareToMove[0] + 1, squareToMove[1]], [Piece.Rook, Color.Black]);
             set_square([7, 0], null);
           } else if (squares_equal(squareToMove, [4, 0]) && squares_equal(square, [0, 0])) {
-            set_square([squareToMove[0]-1, squareToMove[1]], [Piece.Rook, Color.Black]);
+            set_square([squareToMove[0] - 1, squareToMove[1]], [Piece.Rook, Color.Black]);
             set_square([0, 0], null);
           }
           break;
       }
     } else if (piece![0] === Piece.Pawn) {
       if (squareToMove[0] > 0) {
-        const left_passant = get_square([squareToMove[0]-1, squareToMove[1]]);
-        if (left_passant !== null && left_passant[1] === Color.opposite(turn) && squares_equal(square, [squareToMove[0]-1, squareToMove[1]-1])) {
-          set_square([squareToMove[0]-1, squareToMove[1]], null);
+        const left_passant = get_square([squareToMove[0] - 1, squareToMove[1]]);
+        if (left_passant !== null && left_passant[1] === Color.opposite(turn) && squares_equal(square, [squareToMove[0] - 1, squareToMove[1] - 1])) {
+          set_square([squareToMove[0] - 1, squareToMove[1]], null);
         }
       }
 
       if (squareToMove[0] < 7) {
-        const right_passant = get_square([squareToMove[0]+1, squareToMove[1]]);
-        if (right_passant !== null && right_passant[1] === Color.opposite(turn) && squares_equal(square, [squareToMove[0]+1, squareToMove[1]-1])) {
-          set_square([squareToMove[0]+1, squareToMove[1]], null);
+        const right_passant = get_square([squareToMove[0] + 1, squareToMove[1]]);
+        if (right_passant !== null && right_passant[1] === Color.opposite(turn) && squares_equal(square, [squareToMove[0] + 1, squareToMove[1] - 1])) {
+          set_square([squareToMove[0] + 1, squareToMove[1]], null);
         }
       }
     }

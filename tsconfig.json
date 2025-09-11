@@ -5,7 +5,9 @@
         "strictNullChecks": true,
         "noEmitOnError": true,
         "target": "es6",
+        "removeComments": true,
+        "sourceMap": true,
     },
     "compileOnSave": true,
-    "include": ["*.ts"]
+    "include": ["*.ts"],
 }
