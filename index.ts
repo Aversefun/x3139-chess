@@ -6,6 +6,7 @@ const canvasTop = board.offsetTop + board.clientTop;
 
 ctx.lineWidth = 5;
 ctx.strokeStyle = "#000000";
+ctx.font = "large Roboto";
 
 window.onerror = (ev, source, lineno, colno, err) => {
   alert(`${source}:${lineno}:${colno} - ${err} (stack ${err?.stack})`);
@@ -297,9 +298,9 @@ function draw_tile_outline(tile: Tile) {
 function draw_square_background(square: Square, color: Color, set_white: boolean) {
   let pos = square_to_offset(square);
   if (color === Color.Black) {
-    ctx.fillStyle = "#d8d5c9";
-  } else {
     ctx.fillStyle = "#122054";
+  } else {
+    ctx.fillStyle = "#d8d5c9";
   }
   if (set_white) {
     ctx.fillStyle = "#ffffff";
@@ -335,6 +336,25 @@ function draw_indicator(square: Square) {
   ctx.closePath();
 }
 
+function draw_turn() {
+  if (turn === Color.Black) {
+    ctx.fillStyle = "#1f1f1f";
+    ctx.strokeStyle = "#ffffff";
+  } else {
+    ctx.fillStyle = "#e0e0e0";
+    ctx.strokeStyle = "#0000";
+  }
+
+  ctx.fillRect(650, 275, 50, 50);
+  ctx.strokeRect(650, 275, 50, 50);
+
+  if (turn === Color.Black) {
+    ctx.strokeText("Black", 650, 350, 100);
+  } else {
+    ctx.strokeText("White", 650, 350, 100);
+  }
+}
+
 function draw_all() {
   for (const square of all_squares) {
     const i = square[0] + square[1];
@@ -367,6 +387,8 @@ function draw_all() {
   if (!!highlight) {
     draw_highlight(highlight);
   }
+
+  draw_turn();
 }
 
 var squareToMove: Square | null = null;
@@ -378,6 +400,8 @@ var has_moved_piece = false;
 var has_moved_tile = false;
 
 function tick(delta: number) {
+  ctx.fillStyle = "#FFFFFF";
+  ctx.fillRect(0, 0, 700, 600);
   draw_all();
   if (!active) {
     ctx.fillStyle = "#91919171";
