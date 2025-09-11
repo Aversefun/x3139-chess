@@ -117,7 +117,7 @@ var squares: FixedLengthArray<FixedLengthArray<[Piece, Color] | null, 8>, 8> = [
   [null, null, null, null, null, null, null, null],
   [null, null, null, null, null, null, null, null],
   [null, null, null, null, null, null, null, null],
-  [null, null, null, null, null, null, null, null],
+  [null, null, null, null, [Piece.Pawn, Color.Black], null, null, null],
   [[Piece.Pawn, Color.White], [Piece.Pawn, Color.White], [Piece.Pawn, Color.White], [Piece.Pawn, Color.White], [Piece.Pawn, Color.White], [Piece.Pawn, Color.White], [Piece.Pawn, Color.White], [Piece.Pawn, Color.White]],
   [[Piece.Rook, Color.White], [Piece.Knight, Color.White], [Piece.Bishop, Color.White], [Piece.Queen, Color.White], [Piece.King, Color.White], [Piece.Bishop, Color.White], [Piece.Knight, Color.White], [Piece.Rook, Color.White]],
 ];
@@ -276,9 +276,11 @@ function get_allowed_moves(piece: [Piece, Color], from: Square): Square[] {
 
           for (const pos of capture_positions) {
             let sq = get_square([pos[0] + from[0], (-pos[1]) + from[1]]);
+            // alert(`${pos} ${sq}`);
             if (sq !== null && sq[1] === Color.Black) {
-              allowed_movements.push(pos);
+              allowed_movements.push([pos[0], (-pos[1])]);
             }
+            // alert(`${allowed_movements}`);
           }
 
           break;
