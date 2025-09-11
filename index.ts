@@ -112,12 +112,12 @@ function get_location_in_pieces(piece: [Piece, Color]): CanvasPosition {
 }
 
 var squares: FixedLengthArray<FixedLengthArray<[Piece, Color] | null, 8>, 8> = [
-  [[Piece.Rook, Color.Black], [Piece.Knight, Color.Black], [Piece.Bishop, Color.Black], [Piece.Queen, Color.Black], [Piece.King, Color.Black], [Piece.Bishop, Color.Black], [Piece.Knight, Color.Black], [Piece.Rook, Color.Black]],
+  [[Piece.Rook, Color.Black], [Piece.Knight, Color.Black], [Piece.Bishop, Color.Black], [Piece.Queen, Color.Black], null, [Piece.Bishop, Color.Black], [Piece.Knight, Color.Black], [Piece.Rook, Color.Black]],
   [[Piece.Pawn, Color.Black], [Piece.Pawn, Color.Black], [Piece.Pawn, Color.Black], [Piece.Pawn, Color.Black], [Piece.Pawn, Color.Black], [Piece.Pawn, Color.Black], [Piece.Pawn, Color.Black], [Piece.Pawn, Color.Black]],
   [null, null, null, null, null, null, null, null],
   [null, null, null, null, null, null, null, null],
+  [null, null, null, null, [Piece.King, Color.Black], null, null, null],
   [null, null, null, null, null, null, null, null],
-  [null, null, null, null, [Piece.Pawn, Color.Black], null, null, null],
   [[Piece.Pawn, Color.White], [Piece.Pawn, Color.White], [Piece.Pawn, Color.White], [Piece.Pawn, Color.White], [Piece.Pawn, Color.White], [Piece.Pawn, Color.White], [Piece.Pawn, Color.White], [Piece.Pawn, Color.White]],
   [[Piece.Rook, Color.White], [Piece.Knight, Color.White], [Piece.Bishop, Color.White], [Piece.Queen, Color.White], [Piece.King, Color.White], [Piece.Bishop, Color.White], [Piece.Knight, Color.White], [Piece.Rook, Color.White]],
 ];
@@ -135,7 +135,7 @@ var moved_pieces: FixedLengthArray<FixedLengthArray<boolean, 8>, 8> = [
 
 var empty_location: Tile = [3, 2];
 
-var turn: Color = Color.White;
+var turn: Color = Color.Black;
 
 /**
  * Get the tile of the square.
@@ -147,7 +147,7 @@ function get_tile(sq: Square): Tile {
 }
 
 /**
- * Get the value of an unmapped square after mapping it.
+ * Get the value of a square.
  * @param sq The square.
  * @returns The square's value.
  */
@@ -237,11 +237,11 @@ function flip_board() {
   empty_location = [empty_location[0], 3 - empty_location[1]];
 }
 
-function find_pieces(predicate: (piece: ([[Piece, Color], Square] | null)) => boolean): ([[Piece, Color], Square] | null)[] {
+function find_pieces(predicate: (piece: ([[Piece, Color] | null, Square])) => boolean): ([[Piece, Color], Square] | null)[] {
   return squares.reduce<([Piece, Color] | null)[]>((accumulator, value) => accumulator.concat(value), []).map((v, i) => <[[Piece, Color], Square]>[v, <Square>[i % 8, Math.floor(i / 8)]]).filter(predicate)!;
 }
 
-function get_allowed_moves(piece: [Piece, Color], from: Square): Square[] {
+function get_allowed_moves(piece: [Piece, Color], from: Square, ignore_check: boolean = false, only_capturing: boolean = false): Square[] {
   var allowed_movements: Square[] = [];
   var movement_dirs: FixedLengthArray<Square[], 8> = [[], [], [], [], [], [], [], []];
 
@@ -254,30 +254,40 @@ function get_allowed_moves(piece: [Piece, Color], from: Square): Square[] {
       const capture_positions: Square[] = [[1, 1], [-1, 1]];
       switch (piece[1]) {
         case Color.Black:
-          allowed_movements = [[0, 1]];
-          if (!moved_pieces[from[1]][from[0]]) {
-            allowed_movements.push([0, 2]);
+          if (!only_capturing) {
+            allowed_movements = [[0, 1]];
+            if (!moved_pieces[from[1]][from[0]]) {
+              allowed_movements.push([0, 2]);
+            }
           }
 
           for (const pos of capture_positions) {
+            if (pos[0] + from[0] >= 8 || pos[1] + from[1] >= 8 || pos[0] + from[0] < 0 || pos[1] + from[1] < 0) {
+              continue;
+            }
             let sq = get_square([pos[0] + from[0], pos[1] + from[1]]);
-            if (sq !== null && sq[1] === Color.White) {
+            if ((sq !== null && sq[1] === Color.White) || only_capturing) {
               allowed_movements.push(pos);
             }
           }
-          
+
           break;
 
         case Color.White:
-          allowed_movements = [[0, -1]];
-          if (!moved_pieces[from[1]][from[0]]) {
-            allowed_movements.push([0, -2]);
+          if (!only_capturing) {
+            allowed_movements = [[0, -1]];
+            if (!moved_pieces[from[1]][from[0]]) {
+              allowed_movements.push([0, -2]);
+            }
           }
 
           for (const pos of capture_positions) {
+            if (pos[0] + from[0] >= 8 || pos[1] + from[1] >= 8 || pos[0] + from[0] < 0 || pos[1] + from[1] < 0) {
+              continue;
+            }
             let sq = get_square([pos[0] + from[0], (-pos[1]) + from[1]]);
             // alert(`${pos} ${sq}`);
-            if (sq !== null && sq[1] === Color.Black) {
+            if ((sq !== null && sq[1] === Color.Black) || only_capturing) {
               allowed_movements.push([pos[0], (-pos[1])]);
             }
             // alert(`${allowed_movements}`);
@@ -338,7 +348,7 @@ function get_allowed_moves(piece: [Piece, Color], from: Square): Square[] {
         continue;
       }
       if (square !== null && square[1] === Color.opposite(piece[1])) {
-        movement_dirs[dir].splice(i+1);
+        movement_dirs[dir].splice(i + 1);
       } else {
         movement_dirs[dir].splice(i);
       }
@@ -355,6 +365,12 @@ function get_allowed_moves(piece: [Piece, Color], from: Square): Square[] {
       return v[0] < 8 && v[1] < 8 && v[0] >= 0 && v[1] >= 0 && (get_square(v) === null || get_square(v)![1] !== piece[1])
         && !squares_equal(get_tile(v), empty_location);
     })
+    .filter((v) => {
+      if (ignore_check) {
+        return true;
+      }
+      return !in_check(piece[1], [piece[0], from, v]);
+    })
 
   return allowed_movements;
 }
@@ -364,13 +380,23 @@ function is_move_allowed(piece: [Piece, Color], from: Square, to: Square): boole
 }
 
 function in_check(color: Color, after_move: [Piece, Square, Square] | null = null): boolean {
-  var king_square = find_pieces((piece) => piece !== null && piece[0][0] == Piece.King && piece[0][1] == color)[0]![1];
+  var king_square = find_pieces((piece) => piece[0] !== null && piece[0][0] == Piece.King && piece[0][1] == color)[0]![1];
 
   if (after_move !== null && after_move[0] === Piece.King) {
     king_square = after_move[2]
   }
 
-  const moves = find_pieces((piece) => piece !== null && piece[0][1] === Color.opposite(color)).map((v) => get_allowed_moves(v![0], v![1]).filter((sq) => after_move === null || sq !== after_move[1])).reduce((accumulator, value) => accumulator.concat(value), []).filter((v) => v !== null && v === king_square);
+  const moves =
+    find_pieces((piece) => piece[0] !== null && piece[0][1] === Color.opposite(color))
+      .map((v) => {
+        // alert(`move ${v} to ${get_allowed_moves(v![0], v![1], true)}`);
+        return get_allowed_moves(v![0], v![1], true, true);
+      })
+      .reduce<Square[]>((accumulator, value) => accumulator.concat(value), [])
+      .filter((sq) => sq !== null && squares_equal(sq, king_square))
+      .filter((sq) => after_move === null || after_move[0] === Piece.King || sq !== after_move[1]);
+
+  // alert(`king on ${king_square} - move ${after_move}, ${moves} could attack`);
 
   return moves.length > 0;
 }
