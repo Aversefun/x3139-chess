@@ -216,7 +216,7 @@ function get_allowed_moves(piece: [Piece, Color], from: Square): Square[] {
 
   console.log(from);
 
-  const max_dist = 7;
+  const max_dist = 8;
 
   switch (piece[0]) {
     case Piece.Pawn:
