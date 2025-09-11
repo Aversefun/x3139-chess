@@ -251,12 +251,21 @@ function get_allowed_moves(piece: [Piece, Color], from: Square): Square[] {
 
   switch (piece[0]) {
     case Piece.Pawn:
+      const capture_positions: Square[] = [[1, 1], [-1, 1]];
       switch (piece[1]) {
         case Color.Black:
           allowed_movements = [[0, 1]];
           if (!moved_pieces[from[1]][from[0]]) {
             allowed_movements.push([0, 2]);
           }
+
+          for (const pos of capture_positions) {
+            let sq = get_square([pos[0] + from[0], pos[1] + from[1]]);
+            if (sq !== null && sq[1] === Color.White) {
+              allowed_movements.push(pos);
+            }
+          }
+          
           break;
 
         case Color.White:
@@ -264,6 +273,14 @@ function get_allowed_moves(piece: [Piece, Color], from: Square): Square[] {
           if (!moved_pieces[from[1]][from[0]]) {
             allowed_movements.push([0, -2]);
           }
+
+          for (const pos of capture_positions) {
+            let sq = get_square([pos[0] + from[0], (-pos[1]) + from[1]]);
+            if (sq !== null && sq[1] === Color.Black) {
+              allowed_movements.push(pos);
+            }
+          }
+
           break;
       }
       break;
