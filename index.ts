@@ -560,8 +560,10 @@ function draw_turn() {
     ctx.fillText("the game", 660, 365, 100);
   } else if (turn === Color.Black) {
     ctx.fillText("Black", 660, 350, 100);
+    ctx.fillText("to move", 660, 365, 100);
   } else {
     ctx.fillText("White", 660, 350, 100);
+    ctx.fillText("to move", 660, 365, 100);
   }
 }
 
