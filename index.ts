@@ -58,6 +58,17 @@ namespace Color {
   }
 }
 
+enum MoveDirection {
+  Up = 0,
+  Down = 1,
+  Left = 2,
+  Right = 3,
+  UpLeft = 4,
+  UpRight = 5,
+  DownLeft = 6,
+  DownRight = 7,
+}
+
 const all_squares: FixedLengthArray<Square, 64> = [
   [0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [7, 0],
   [0, 1], [1, 1], [2, 1], [3, 1], [4, 1], [5, 1], [6, 1], [7, 1],
@@ -111,6 +122,17 @@ var squares: FixedLengthArray<FixedLengthArray<[Piece, Color] | null, 8>, 8> = [
   [[Piece.Rook, Color.White], [Piece.Knight, Color.White], [Piece.Bishop, Color.White], [Piece.Queen, Color.White], [Piece.King, Color.White], [Piece.Bishop, Color.White], [Piece.Knight, Color.White], [Piece.Rook, Color.White]],
 ];
 
+var moved_pieces: FixedLengthArray<FixedLengthArray<boolean, 8>, 8> = [
+  [false, false, false, false, false, false, false, false],
+  [false, false, false, false, false, false, false, false],
+  [true, true, true, true, true, true, true, true],
+  [true, true, true, true, true, true, true, true],
+  [true, true, true, true, true, true, true, true],
+  [true, true, true, true, true, true, true, true],
+  [false, false, false, false, false, false, false, false],
+  [false, false, false, false, false, false, false, false],
+];
+
 var empty_location: Tile = [3, 2];
 
 var turn: Color = Color.White;
@@ -141,20 +163,23 @@ function get_squares(tile: Tile): FixedLengthArray<FixedLengthArray<[Piece, Colo
   ];
 }
 
-function set_square(sq: Square, piece: [Piece, Color] | null) {
+function set_square(sq: Square, piece: [Piece, Color] | null, mark_piece_moved: boolean = true) {
   squares[sq[1]][sq[0]] = piece;
+  if (mark_piece_moved) {
+    moved_pieces[sq[1]][sq[0]] = true;
+  }
 }
 
-function set_squares(tile: Tile, pieces: FixedLengthArray<FixedLengthArray<[Piece, Color] | null, 2>, 2>) {
+function set_squares(tile: Tile, pieces: FixedLengthArray<FixedLengthArray<[Piece, Color] | null, 2>, 2>, mark_piece_moved: boolean = false) {
   const base: Square = [tile[0] * 2, tile[1] * 2];
-  set_square(base, pieces[0][0]);
-  set_square([base[0] + 1, base[1]], pieces[0][1]);
-  set_square([base[0], base[1] + 1], pieces[1][0]);
-  set_square([base[0] + 1, base[1] + 1], pieces[1][1]);
+  set_square(base, pieces[0][0], mark_piece_moved);
+  set_square([base[0] + 1, base[1]], pieces[0][1], mark_piece_moved);
+  set_square([base[0], base[1] + 1], pieces[1][0], mark_piece_moved);
+  set_square([base[0] + 1, base[1] + 1], pieces[1][1], mark_piece_moved);
 }
 
-function copy_squares(from: Tile, to: Tile) {
-  set_squares(to, get_squares(from));
+function copy_squares(from: Tile, to: Tile, mark_piece_moved: boolean = false) {
+  set_squares(to, get_squares(from), mark_piece_moved);
 }
 
 enum Direction {
@@ -195,8 +220,8 @@ function move_tile(tile: Tile, dir: Direction): boolean {
     return false;
   }
 
-  copy_squares(tile, empty_location);
-  set_squares(tile, [[null, null], [null, null]]);
+  copy_squares(tile, empty_location, false);
+  set_squares(tile, [[null, null], [null, null]], false);
 
   empty_location = tile;
 
@@ -212,8 +237,13 @@ function flip_board() {
   empty_location = [empty_location[0], 3 - empty_location[1]];
 }
 
+function find_pieces(predicate: (piece: ([[Piece, Color], Square] | null)) => boolean): ([[Piece, Color], Square] | null)[] {
+  return squares.reduce<([Piece, Color] | null)[]>((accumulator, value) => accumulator.concat(value), []).map((v, i) => <[[Piece, Color], Square]>[v, <Square>[i % 8, Math.floor(i / 8)]]).filter(predicate)!;
+}
+
 function get_allowed_moves(piece: [Piece, Color], from: Square): Square[] {
   var allowed_movements: Square[] = [];
+  var movement_dirs: FixedLengthArray<Square[], 8> = [[], [], [], [], [], [], [], []];
 
   console.log(from);
 
@@ -223,18 +253,27 @@ function get_allowed_moves(piece: [Piece, Color], from: Square): Square[] {
     case Piece.Pawn:
       switch (piece[1]) {
         case Color.Black:
-          allowed_movements = [[0, 1], [0, 2]];
+          allowed_movements = [[0, 1]];
+          if (!moved_pieces[from[1]][from[0]]) {
+            allowed_movements.push([0, 2]);
+          }
           break;
-      
+
         case Color.White:
-          allowed_movements = [[0, -1], [0, -2]];
+          allowed_movements = [[0, -1]];
+          if (!moved_pieces[from[1]][from[0]]) {
+            allowed_movements.push([0, -2]);
+          }
           break;
       }
       break;
 
     case Piece.Bishop:
-      for (let i = 0; i < max_dist; i++) {
-        allowed_movements.push([i, i], [-i, -i], [i, -i], [-i, i]);
+      for (let i = 1; i < max_dist; i++) {
+        movement_dirs[MoveDirection.DownLeft].push([-i, i]);
+        movement_dirs[MoveDirection.DownRight].push([i, i]);
+        movement_dirs[MoveDirection.UpLeft].push([-i, -i]);
+        movement_dirs[MoveDirection.UpRight].push([i, -i]);
       }
       break;
 
@@ -243,15 +282,24 @@ function get_allowed_moves(piece: [Piece, Color], from: Square): Square[] {
       break;
 
     case Piece.Rook:
-      for (let i = 0; i < max_dist; i++) {
-        allowed_movements.push([i, 0], [0, i], [-i, 0], [0, -i]);
+      for (let i = 1; i < max_dist; i++) {
+        movement_dirs[MoveDirection.Up].push([0, -i]);
+        movement_dirs[MoveDirection.Down].push([0, i]);
+        movement_dirs[MoveDirection.Left].push([-i, 0]);
+        movement_dirs[MoveDirection.Right].push([i, 0]);
       }
       break;
 
     case Piece.Queen:
-      for (let i = 0; i < max_dist; i++) {
-        allowed_movements.push([i, 0], [0, i], [-i, 0], [0, -i]);
-        allowed_movements.push([i, i], [-i, -i], [i, -i], [-i, i]);
+      for (let i = 1; i < max_dist; i++) {
+        movement_dirs[MoveDirection.Up].push([0, -i]);
+        movement_dirs[MoveDirection.Down].push([0, i]);
+        movement_dirs[MoveDirection.Left].push([-i, 0]);
+        movement_dirs[MoveDirection.Right].push([i, 0]);
+        movement_dirs[MoveDirection.DownLeft].push([-i, i]);
+        movement_dirs[MoveDirection.DownRight].push([i, i]);
+        movement_dirs[MoveDirection.UpLeft].push([-i, -i]);
+        movement_dirs[MoveDirection.UpRight].push([i, -i]);
       }
       break;
 
@@ -261,20 +309,51 @@ function get_allowed_moves(piece: [Piece, Color], from: Square): Square[] {
       break;
   }
 
+  for (let dir = 0; dir < movement_dirs.length; dir++) {
+    const movement_dir = movement_dirs[dir].map<Square>((v) => [v[0] + from[0], v[1] + from[1]]).filter((v) => v[0] < 8 && v[1] < 8 && v[0] >= 0 && v[1] >= 0);
+    movement_dirs[dir] = movement_dir;
+    for (let i = 0; i < movement_dir.length; i++) {
+      const square = get_square(movement_dir[i]);
+      // alert(`square: ${movement_dir[i]} tile: ${get_tile(movement_dir[i])} value: ${square} empty: ${empty_location} is empty: ${squares_equal(get_tile(movement_dir[i]), empty_location)}`);
+      if (square === null && !squares_equal(get_tile(movement_dir[i]), empty_location)) {
+        continue;
+      }
+      if (square !== null && square[1] === Color.opposite(piece[1])) {
+        movement_dirs[dir].splice(i+1);
+      } else {
+        movement_dirs[dir].splice(i);
+      }
+      break;
+    }
+
+    allowed_movements = allowed_movements.concat(movement_dirs[dir].map((v) => [v[0] - from[0], v[1] - from[1]]));
+  }
+
   allowed_movements = allowed_movements
     .map((v) => <Square>[v[0] + from[0], v[1] + from[1]])
-    .filter((v) =>
-      {
-        console.log(v);
-        return v[0] < 8 && v[1] < 8 && v[0] >= 0 && v[1] >= 0 && (get_square(v) === null || get_square(v)![1] !== turn)
-        && get_tile(v) !== empty_location;
-      });
+    .filter((v) => {
+      console.log(v);
+      return v[0] < 8 && v[1] < 8 && v[0] >= 0 && v[1] >= 0 && (get_square(v) === null || get_square(v)![1] !== piece[1])
+        && !squares_equal(get_tile(v), empty_location);
+    })
 
   return allowed_movements;
 }
 
 function is_move_allowed(piece: [Piece, Color], from: Square, to: Square): boolean {
   return get_allowed_moves(piece, from).filter((v) => squares_equal(v, to)).length > 0
+}
+
+function in_check(color: Color, after_move: [Piece, Square, Square] | null = null): boolean {
+  var king_square = find_pieces((piece) => piece !== null && piece[0][0] == Piece.King && piece[0][1] == color)[0]![1];
+
+  if (after_move !== null && after_move[0] === Piece.King) {
+    king_square = after_move[2]
+  }
+
+  const moves = find_pieces((piece) => piece !== null && piece[0][1] === Color.opposite(color)).map((v) => get_allowed_moves(v![0], v![1]).filter((sq) => after_move === null || sq !== after_move[1])).reduce((accumulator, value) => accumulator.concat(value), []).filter((v) => v !== null && v === king_square);
+
+  return moves.length > 0;
 }
 
 function tile_to_offset(tile: Tile): CanvasPosition {
@@ -331,28 +410,29 @@ function draw_indicator(square: Square) {
 
   ctx.fillStyle = "#9d9d9d7c";
   ctx.beginPath();
-  ctx.arc(pos[0] + (45*(4/5)), pos[1] + (45*(4/5)), 45/2, 0, 2 * Math.PI);
+  ctx.arc(pos[0] + (45 * (4 / 5)), pos[1] + (45 * (4 / 5)), 45 / 2, 0, 2 * Math.PI);
   ctx.fill();
   ctx.closePath();
 }
 
 function draw_turn() {
+  ctx.strokeStyle = "#a3a3a3";
   if (turn === Color.Black) {
     ctx.fillStyle = "#1f1f1f";
-    ctx.strokeStyle = "#ffffff";
   } else {
     ctx.fillStyle = "#e0e0e0";
-    ctx.strokeStyle = "#0000";
   }
 
-  ctx.fillRect(650, 275, 50, 50);
-  ctx.strokeRect(650, 275, 50, 50);
+  ctx.fillRect(640, 275, 50, 50);
+  ctx.strokeRect(640, 275, 50, 50);
 
+  // ctx.lineWidth = 2;
   if (turn === Color.Black) {
-    ctx.strokeText("Black", 650, 350, 100);
+    ctx.fillText("Black", 640, 350, 100);
   } else {
-    ctx.strokeText("White", 650, 350, 100);
+    ctx.fillText("White", 640, 350, 100);
   }
+  // ctx.lineWidth = 5;
 }
 
 function draw_all() {
@@ -414,6 +494,7 @@ function switch_turn() {
   turn = Color.opposite(turn);
   has_moved_piece = false;
   has_moved_tile = false;
+  indicators = [];
 }
 
 tick(0);
@@ -445,6 +526,7 @@ board.addEventListener('click', function (event) {
     highlight = null;
     //flip_board();
     has_moved_piece = true;
+    indicators = [];
     if ((move_piece_and_tile && has_moved_tile) || !move_piece_and_tile) {
       switch_turn();
     }
