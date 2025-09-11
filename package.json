@@ -1,5 +1,9 @@
 {
   "devDependencies": {
+    "esbuild": "0.25.9",
     "typescript": "^5.9.2"
+  },
+  "scripts": {
+    "build": "tsc -noEmit && esbuild index.ts --minify --sourcemap --target=chrome58,firefox57,safari11,edge16 --outfile=index.js"
   }
 }
