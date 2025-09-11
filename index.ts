@@ -135,7 +135,7 @@ var moved_pieces: FixedLengthArray<FixedLengthArray<boolean, 8>, 8> = [
 
 var empty_location: Tile = [3, 2];
 
-var turn: Color = Color.Black;
+var turn: Color = Color.White;
 
 /**
  * Get the tile of the square.
