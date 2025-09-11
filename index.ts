@@ -248,6 +248,10 @@ function get_allowed_moves(piece: [Piece, Color], from: Square, ignore_check: bo
   var allowed_movements: Square[] = [];
   var movement_dirs: FixedLengthArray<Square[], 8> = [[], [], [], [], [], [], [], []];
 
+  if (piece === null) {
+    return [];
+  }
+
   console.log(from);
 
   const max_dist = 8;
@@ -455,6 +459,14 @@ function in_check(color: Color, after_move: [Piece, Square, Square] | null = nul
   return moves.length > 0;
 }
 
+function get_tile_squares(tile: Tile): FixedLengthArray<Square, 4> {
+  const base: Square = [tile[0] * 2, tile[1] * 2];
+  return [
+    base, [base[0] + 1, base[1]],
+    [base[0], base[1] + 1], [base[0] + 1, base[1] + 1]
+  ];
+}
+
 function tile_to_offset(tile: Tile): CanvasPosition {
   return [tile[0] * 150, tile[1] * 150];
 }
@@ -496,19 +508,27 @@ function draw_piece(square: Square, piece: [Piece, Color]) {
 
 var highlight: Square | null = null;
 var indicators: Square[] = [];
+var show_tile_indicator = false;
 
 function draw_highlight(square: Square) {
   let pos = square_to_offset(square);
 
-  ctx.strokeStyle = "#e4e31d";
-  ctx.strokeRect(pos[0] - 1, pos[1] + 1, 75, 75);
+  ctx.strokeStyle = "#1f38c3ff";
+  ctx.strokeRect(pos[0], pos[1], 75, 75);
 }
 
 function draw_indicator(square: Square) {
   let pos = square_to_offset(square);
 
-  ctx.fillStyle = "#9d9d9d7c";
-  ctx.fillRect(pos[0], pos[1], 75, 75);
+  ctx.strokeStyle = "#981b1bff";
+  ctx.strokeRect(pos[0], pos[1], 75, 75);
+}
+
+function draw_tile_indicator(tile: Tile) {
+  let pos = tile_to_offset(tile);
+
+  ctx.strokeStyle = "#981b1bff";
+  ctx.strokeRect(pos[0], pos[1], 150, 150);
 }
 
 function draw_turn() {
@@ -555,12 +575,16 @@ function draw_all() {
     draw_tile_outline(tile);
   }
 
+  if (!!highlight) {
+    draw_highlight(highlight);
+  }
+
   for (const indicator of indicators) {
     draw_indicator(indicator);
   }
 
-  if (!!highlight) {
-    draw_highlight(highlight);
+  if (!!show_tile_indicator) {
+    draw_tile_indicator(empty_location);
   }
 
   draw_turn();
@@ -590,6 +614,7 @@ function switch_turn() {
   has_moved_piece = false;
   has_moved_tile = false;
   indicators = [];
+  show_tile_indicator = false;
 }
 
 tick(0);
@@ -598,7 +623,7 @@ board.addEventListener('click', function (event) {
     return;
   }
   const square = offset_to_square([Math.floor(event.pageX - canvasLeft), Math.floor(event.pageY - canvasTop)]);
-  if (square[0] >= 64 || square[1] >= 64) {
+  if (square[0] > 7 || square[1] > 7) {
     return;
   }
   const tile = get_tile(square);
@@ -609,10 +634,12 @@ board.addEventListener('click', function (event) {
     if (get_square(square) !== null && !has_moved_piece) {
       indicators = get_allowed_moves(get_square(square)!, square);
     }
+    show_tile_indicator = !!move_dir(tile);
   } else if (squareToMove !== null && squares_equal(square, squareToMove)) {
     squareToMove = null;
     highlight = null;
     indicators = [];
+    show_tile_indicator = false;
   } else if (squareToMove !== null && !squares_equal(tile, empty_location) && ((!has_moved_piece && move_piece_and_tile) || !move_piece_and_tile) && is_move_allowed(get_square(squareToMove)!, squareToMove, square)) {
     const piece = get_square(squareToMove);
 
@@ -661,6 +688,7 @@ board.addEventListener('click', function (event) {
 
     squareToMove = null;
     highlight = null;
+    show_tile_indicator = false;
     //flip_board();
     has_moved_piece = true;
     indicators = [];
@@ -676,6 +704,7 @@ board.addEventListener('click', function (event) {
     }
     squareToMove = null;
     highlight = null;
+    show_tile_indicator = false;
     //flip_board();
     has_moved_tile = true;
     if ((move_piece_and_tile && has_moved_piece) || !move_piece_and_tile) {
