@@ -343,6 +343,26 @@ function get_allowed_moves(piece: [Piece, Color], from: Square, ignore_check: bo
     case Piece.King:
       allowed_movements.push([1, 0], [0, 1], [-1, 0], [0, -1]);
       allowed_movements.push([1, 1], [-1, -1], [1, -1], [-1, 1]);
+
+      switch (piece[1]) {
+        case Color.White:
+          if (!moved_pieces[7][7]) {
+            movement_dirs[MoveDirection.Right].push([2, 0]);
+          }
+          if (!moved_pieces[7][0]) {
+            movement_dirs[MoveDirection.Left].push([-2, 0]);
+          }
+          break;
+      
+        case Color.Black:
+          if (!moved_pieces[0][7]) {
+            movement_dirs[MoveDirection.Right].push([2, 0]);
+          }
+          if (!moved_pieces[0][0]) {
+            movement_dirs[MoveDirection.Left].push([-2, 0]);
+          }
+          break;
+      }
       break;
   }
 
@@ -573,8 +593,35 @@ board.addEventListener('click', function (event) {
     indicators = [];
   } else if (squareToMove !== null && !squares_equal(tile, empty_location) && ((!has_moved_piece && move_piece_and_tile) || !move_piece_and_tile) && is_move_allowed(get_square(squareToMove)!, squareToMove, square)) {
     const piece = get_square(squareToMove);
+
     set_square(square, piece);
     set_square(squareToMove, null);
+
+    // alert(`from ${squareToMove} to ${square}`);
+
+    if (piece![0] === Piece.King) {
+      switch (turn) {
+        case Color.White:
+          if (squares_equal(squareToMove, [4, 7]) && squares_equal(square, [6, 7])) {
+            set_square([squareToMove[0]+1, squareToMove[1]], [Piece.Rook, Color.White]);
+            set_square([7, 7], null);
+          } else if (squares_equal(squareToMove, [4, 7]) && squares_equal(square, [0, 7])) {
+            set_square([squareToMove[0]-1, squareToMove[1]], [Piece.Rook, Color.White]);
+            set_square([0, 7], null);
+          }
+          break;
+      
+        case Color.Black:
+          if (squares_equal(squareToMove, [4, 0]) && squares_equal(square, [6, 0])) {
+            set_square([squareToMove[0]+1, squareToMove[1]], [Piece.Rook, Color.Black]);
+            set_square([7, 0], null);
+          } else if (squares_equal(squareToMove, [4, 0]) && squares_equal(square, [0, 0])) {
+            set_square([squareToMove[0]-1, squareToMove[1]], [Piece.Rook, Color.Black]);
+            set_square([0, 0], null);
+          }
+          break;
+      }
+    }
     squareToMove = null;
     highlight = null;
     //flip_board();
