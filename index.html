@@ -5,14 +5,56 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>X3139 Chess</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            text-align: center;
+            font-family: "Roboto", sans-serif;
+            font-optical-sizing: auto;
+            font-weight: 500;
+            font-style: normal;
+            font-variation-settings:
+                "wdth" 100;
+        }
+        select, button {
+            font-size: large;
+            background-color: aliceblue;
+            border-radius: 5px;
+            border: 2px solid #4b565e;
+            margin: auto;
+            display: block;
+            margin-bottom: 10px;
+        }
+        button {
+            cursor: pointer;
+        }
+    </style>
 </head>
 
 <body>
     <img id="pieces" src="pieces.svg" alt="Chess Pieces" aria-disabled="true"
         style="display: none; image-rendering: pixelated;">
+    <select name="Mode selector" id="mode">
+        <option value="default" selected>Default</option>
+        <option value="multi">Multi</option>
+        <option value="omni">Omni</option>
+        <option value="chaos">Chaos</option>
+    </select>
+    <button id="start">Start</button><br>
     <noscript>Please enable javascript for this page.</noscript>
     <canvas id="board" width="600" height="600" style="padding: 0; image-rendering: pixelated; margin: auto; display: block;">Please allow canvases for this page.</canvas>
     <script src="index.js"></script>
+    <p style="padding: 0; margin: auto; display: block;">
+        Modes:
+    </p>
+    <ul style="list-style-type: none;">
+        <li>Default - Can only move tiles with one of your pieces on, either move a piece or move a tile each turn</li>
+        <li>Multi - Can only move tiles with one of your pieces on, move a piece and move a tile each turn</li>
+        <li>Omni - Can move any tile, either move a piece or move a tile each turn</li>
+        <li>Chaos - Can move any tile, move a piece and move a tile each turn</li>
+    </ul>
 </body>
 
 </html>

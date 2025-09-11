@@ -38,6 +38,13 @@ enum Color {
   White = 2,
 }
 
+enum Mode {
+  Default = "default",
+  Multi = "multi",
+  Omni = "omni",
+  Chaos = "chaos",
+}
+
 namespace Color {
   export function opposite(color: Color): Color {
     switch (color) {
@@ -282,39 +289,92 @@ function draw_all() {
 }
 
 var squareToMove: Square | null = null;
+var active = false;
+var can_move_all = false;
+var move_piece_and_tile = false;
+
+var has_moved_piece = false;
+var has_moved_tile = false;
 
 function tick(delta: number) {
   draw_all();
+  if (!active) {
+    ctx.fillStyle = "#91919171";
+    ctx.fillRect(0, 0, 600, 600);
+  }
   requestAnimationFrame(tick);
+}
+
+function switch_turn() {
+  turn = Color.opposite(turn);
+  has_moved_piece = false;
+  has_moved_tile = false;
 }
 
 tick(0);
 board.addEventListener('click', function (event) {
+  if (!active) {
+    return;
+  }
   const square = offset_to_square([Math.floor(event.pageX - canvasLeft), Math.floor(event.pageY - canvasTop)]);
   if (square[0] >= 64 || square[1] >= 64) {
     return;
   }
   const tile = get_tile(square);
 
-  if (squareToMove === null && ((get_square(square) !== null && get_square(square)![1] == turn) || (move_dir(tile) && get_squares(tile).some((v) => v.some((v) => v !== null && v[1] === turn))))) {
+  if (squareToMove === null && ((get_square(square) !== null && get_square(square)![1] == turn && ((!has_moved_piece && move_piece_and_tile) || !move_piece_and_tile)) || ((move_dir(tile) && ((move_piece_and_tile && !has_moved_tile) || !move_piece_and_tile)) && (get_squares(tile).some((v) => v.some((v) => v !== null && v[1] === turn)) || can_move_all)))) {
     squareToMove = square;
     highlight = square;
   } else if (squareToMove !== null && squares_equal(square, squareToMove)) {
     squareToMove = null;
     highlight = null;
-  } else if (squareToMove !== null && !squares_equal(tile, empty_location)) {
+  } else if (squareToMove !== null && !squares_equal(tile, empty_location) && ((!has_moved_piece && move_piece_and_tile) || !move_piece_and_tile)) {
     const piece = get_square(squareToMove);
     set_square(square, piece);
     set_square(squareToMove, null);
     squareToMove = null;
     highlight = null;
     //flip_board();
-    turn = Color.opposite(turn);
-  } else if (squareToMove !== null && move_dir(get_tile(squareToMove)) && squares_equal(tile, empty_location)) {
+    has_moved_piece = true;
+    if ((move_piece_and_tile && has_moved_tile) || !move_piece_and_tile) {
+      switch_turn();
+    }
+  } else if (squareToMove !== null && move_dir(get_tile(squareToMove)) && squares_equal(tile, empty_location) && ((!has_moved_tile && move_piece_and_tile) || !move_piece_and_tile)) {
     move_tile(get_tile(squareToMove), move_dir(get_tile(squareToMove))!);
     squareToMove = null;
     highlight = null;
     //flip_board();
-    turn = Color.opposite(turn);
+    has_moved_tile = true;
+    if ((move_piece_and_tile && has_moved_piece) || !move_piece_and_tile) {
+      switch_turn();
+    }
   }
 }, false);
+
+document.getElementById("start")!.addEventListener("click", () => {
+  const modeElement = <HTMLSelectElement>document.getElementById("mode")!;
+  const mode = <Mode>modeElement.value;
+  console.log(mode);
+
+  switch (mode) {
+    case Mode.Default:
+      break;
+  
+    case Mode.Multi:
+      move_piece_and_tile = true;
+      break;
+    
+    case Mode.Omni:
+      can_move_all = true;
+      break;
+
+    case Mode.Chaos:
+      can_move_all = true;
+      move_piece_and_tile = true;
+      break;
+  }
+  
+  (<HTMLButtonElement>document.getElementById("start")!).disabled = true;
+  modeElement.disabled = true;
+  active = true;
+});
