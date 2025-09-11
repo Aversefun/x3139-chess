@@ -376,24 +376,26 @@ function get_allowed_moves(piece: [Piece, Color], from: Square, ignore_check: bo
       allowed_movements.push([1, 0], [0, 1], [-1, 0], [0, -1]);
       allowed_movements.push([1, 1], [-1, -1], [1, -1], [-1, 1]);
 
-      switch (piece[1]) {
-        case Color.White:
-          if (!moved_pieces[7][7]) {
-            movement_dirs[MoveDirection.Right].push([2, 0]);
-          }
-          if (!moved_pieces[7][0]) {
-            movement_dirs[MoveDirection.Left].push([-2, 0]);
-          }
-          break;
+      if (!moved_pieces[from[1]][from[0]]) {
+        switch (piece[1]) {
+          case Color.White:
+            if (!moved_pieces[7][7]) {
+              movement_dirs[MoveDirection.Right].push([2, 0]);
+            }
+            if (!moved_pieces[7][0]) {
+              movement_dirs[MoveDirection.Left].push([-2, 0]);
+            }
+            break;
 
-        case Color.Black:
-          if (!moved_pieces[0][7]) {
-            movement_dirs[MoveDirection.Right].push([2, 0]);
-          }
-          if (!moved_pieces[0][0]) {
-            movement_dirs[MoveDirection.Left].push([-2, 0]);
-          }
-          break;
+          case Color.Black:
+            if (!moved_pieces[0][7]) {
+              movement_dirs[MoveDirection.Right].push([2, 0]);
+            }
+            if (!moved_pieces[0][0]) {
+              movement_dirs[MoveDirection.Left].push([-2, 0]);
+            }
+            break;
+        }
       }
       break;
   }
@@ -461,6 +463,15 @@ function in_check(color: Color, after_move: [Piece, Square, Square] | null = nul
   return moves.length > 0;
 }
 
+function in_checkmate(color: Color): boolean {
+  const moves = find_pieces((piece) => piece[0] !== null && piece[0][1] === color)
+    .map((v) => {
+      return get_allowed_moves(v![0], v![1], false, true);
+    });
+  return (in_check(color) && moves
+    .reduce<Square[]>((accumulator, value) => accumulator.concat(value), []).length == 0) || moves.length == 0;
+}
+
 function get_tile_squares(tile: Tile): FixedLengthArray<Square, 4> {
   const base: Square = [tile[0] * 2, tile[1] * 2];
   return [
@@ -483,6 +494,7 @@ function offset_to_square(pos: CanvasPosition): Tile {
 
 var squareToMove: Square | null = null;
 var active = false;
+var checkmate = false;
 var can_move_all = false;
 var move_piece_and_tile = false;
 
@@ -555,7 +567,9 @@ function draw_turn() {
   ctx.strokeRect(635, 275, 50, 50);
 
   ctx.fillStyle = ctx.strokeStyle;
-  if (!active) {
+  if (checkmate) {
+    ctx.fillText("Checkmate", 660, 350, 100);
+  } else if (!active) {
     ctx.fillText("Start", 660, 350, 100);
     ctx.fillText("the game", 660, 365, 100);
   } else if (turn === Color.Black) {
@@ -624,6 +638,11 @@ function switch_turn() {
   has_moved_tile = false;
   indicators = [];
   show_tile_indicator = false;
+
+  if (in_checkmate(turn)) {
+    checkmate = true;
+    turn = Color.opposite(turn);
+  }
 }
 
 tick(0);
