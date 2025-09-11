@@ -481,6 +481,14 @@ function offset_to_square(pos: CanvasPosition): Tile {
   return [Math.floor(pos[0] / 75), Math.floor(pos[1] / 75)];
 }
 
+var squareToMove: Square | null = null;
+var active = false;
+var can_move_all = false;
+var move_piece_and_tile = false;
+
+var has_moved_piece = false;
+var has_moved_tile = false;
+
 function draw_tile_outline(tile: Tile) {
   let pos = tile_to_offset(tile);
   ctx.strokeStyle = "#000000";
@@ -535,20 +543,25 @@ function draw_tile_indicator(tile: Tile) {
 
 function draw_turn() {
   ctx.strokeStyle = "#808080";
-  if (turn === Color.Black) {
+  if (!active) {
+    ctx.fillStyle = "#b62626";
+  } else if (turn === Color.Black) {
     ctx.fillStyle = "#1f1f1f";
   } else {
     ctx.fillStyle = "#e0e0e0";
   }
 
-  ctx.fillRect(640, 275, 50, 50);
-  ctx.strokeRect(640, 275, 50, 50);
+  ctx.fillRect(635, 275, 50, 50);
+  ctx.strokeRect(635, 275, 50, 50);
 
   ctx.fillStyle = ctx.strokeStyle;
-  if (turn === Color.Black) {
-    ctx.fillText("Black", 665, 350, 100);
+  if (!active) {
+    ctx.fillText("Start", 660, 350, 100);
+    ctx.fillText("the game", 660, 365, 100);
+  } else if (turn === Color.Black) {
+    ctx.fillText("Black", 660, 350, 100);
   } else {
-    ctx.fillText("White", 665, 350, 100);
+    ctx.fillText("White", 660, 350, 100);
   }
 }
 
@@ -591,14 +604,6 @@ function draw_all() {
 
   draw_turn();
 }
-
-var squareToMove: Square | null = null;
-var active = false;
-var can_move_all = false;
-var move_piece_and_tile = false;
-
-var has_moved_piece = false;
-var has_moved_tile = false;
 
 function tick(delta: number) {
   ctx.fillStyle = "#FFFFFF";
