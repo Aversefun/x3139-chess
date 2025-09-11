@@ -252,6 +252,7 @@ function get_allowed_moves(piece: [Piece, Color], from: Square, ignore_check: bo
   switch (piece[0]) {
     case Piece.Pawn:
       const capture_positions: Square[] = [[1, 1], [-1, 1]];
+      const enpassant_positions: Square[] = [[-1, -1], [1, -1]];
       switch (piece[1]) {
         case Color.Black:
           if (!only_capturing) {
@@ -271,6 +272,17 @@ function get_allowed_moves(piece: [Piece, Color], from: Square, ignore_check: bo
             }
             let sq = get_square([pos[0] + from[0], pos[1] + from[1]]);
             if ((sq !== null && sq[1] === Color.White) || only_capturing) {
+              allowed_movements.push(pos);
+            }
+          }
+
+          for (const pos of enpassant_positions) {
+            if (pos[0] + from[0] >= 8 || pos[1] + from[1] >= 8 || pos[0] + from[0] < 0 || pos[1] + from[1] < 0) {
+              continue;
+            }
+
+            let sq = get_square([pos[0] + from[0], from[1]]);
+            if ((sq !== null && sq[1] === Color.White && sq[0] === Piece.Pawn) || only_capturing) {
               allowed_movements.push(pos);
             }
           }
@@ -295,10 +307,21 @@ function get_allowed_moves(piece: [Piece, Color], from: Square, ignore_check: bo
             }
             let sq = get_square([pos[0] + from[0], (-pos[1]) + from[1]]);
             // alert(`${pos} ${sq}`);
-            if ((sq !== null && sq[1] === Color.Black) || only_capturing) {
+            if ((sq !== null && sq[1] === Color.Black && sq[0] === Piece.Pawn) || only_capturing) {
               allowed_movements.push([pos[0], (-pos[1])]);
             }
             // alert(`${allowed_movements}`);
+          }
+
+          for (const pos of enpassant_positions) {
+            if (pos[0] + from[0] >= 8 || pos[1] + from[1] >= 8 || pos[0] + from[0] < 0 || pos[1] + from[1] < 0) {
+              continue;
+            }
+
+            let sq = get_square([pos[0] + from[0], from[1]]);
+            if ((sq !== null && sq[1] === Color.Black) || only_capturing) {
+              allowed_movements.push(pos);
+            }
           }
 
           break;
@@ -594,10 +617,7 @@ board.addEventListener('click', function (event) {
   } else if (squareToMove !== null && !squares_equal(tile, empty_location) && ((!has_moved_piece && move_piece_and_tile) || !move_piece_and_tile) && is_move_allowed(get_square(squareToMove)!, squareToMove, square)) {
     const piece = get_square(squareToMove);
 
-    set_square(square, piece);
-    set_square(squareToMove, null);
-
-    // alert(`from ${squareToMove} to ${square}`);
+    // alert(`from ${squareToMove} to ${square} (might passant over ${[squareToMove[0]-1, squareToMove[1]]} or ${[squareToMove[0]+1, squareToMove[1]]})`);
 
     if (piece![0] === Piece.King) {
       switch (turn) {
@@ -621,7 +641,25 @@ board.addEventListener('click', function (event) {
           }
           break;
       }
+    } else if (piece![0] === Piece.Pawn) {
+      if (squareToMove[0] > 0) {
+        const left_passant = get_square([squareToMove[0]-1, squareToMove[1]]);
+        if (left_passant !== null && left_passant[1] === Color.opposite(turn) && squares_equal(square, [squareToMove[0]-1, squareToMove[1]-1])) {
+          set_square([squareToMove[0]-1, squareToMove[1]], null);
+        }
+      }
+
+      if (squareToMove[0] < 7) {
+        const right_passant = get_square([squareToMove[0]+1, squareToMove[1]]);
+        if (right_passant !== null && right_passant[1] === Color.opposite(turn) && squares_equal(square, [squareToMove[0]+1, squareToMove[1]-1])) {
+          set_square([squareToMove[0]+1, squareToMove[1]], null);
+        }
+      }
     }
+
+    set_square(square, piece);
+    set_square(squareToMove, null);
+
     squareToMove = null;
     highlight = null;
     //flip_board();
