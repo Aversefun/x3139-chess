@@ -7,6 +7,9 @@ const canvasTop = board.offsetTop + board.clientTop;
 ctx.lineWidth = 5;
 ctx.strokeStyle = "#000000";
 ctx.font = "large Roboto";
+ctx.textAlign = "center";
+
+ctx.translate(5, 5);
 
 window.onerror = (ev, source, lineno, colno, err) => {
   alert(`${source}:${lineno}:${colno} - ${err} (stack ${err?.stack})`);
@@ -505,14 +508,11 @@ function draw_indicator(square: Square) {
   let pos = square_to_offset(square);
 
   ctx.fillStyle = "#9d9d9d7c";
-  ctx.beginPath();
-  ctx.arc(pos[0] + (45 * (4 / 5)), pos[1] + (45 * (4 / 5)), 45 / 2, 0, 2 * Math.PI);
-  ctx.fill();
-  ctx.closePath();
+  ctx.fillRect(pos[0], pos[1], 75, 75);
 }
 
 function draw_turn() {
-  ctx.strokeStyle = "#a3a3a3";
+  ctx.strokeStyle = "#808080";
   if (turn === Color.Black) {
     ctx.fillStyle = "#1f1f1f";
   } else {
@@ -522,13 +522,12 @@ function draw_turn() {
   ctx.fillRect(640, 275, 50, 50);
   ctx.strokeRect(640, 275, 50, 50);
 
-  // ctx.lineWidth = 2;
+  ctx.fillStyle = ctx.strokeStyle;
   if (turn === Color.Black) {
-    ctx.fillText("Black", 640, 350, 100);
+    ctx.fillText("Black", 665, 350, 100);
   } else {
-    ctx.fillText("White", 640, 350, 100);
+    ctx.fillText("White", 665, 350, 100);
   }
-  // ctx.lineWidth = 5;
 }
 
 function draw_all() {
@@ -581,7 +580,7 @@ function tick(delta: number) {
   draw_all();
   if (!active) {
     ctx.fillStyle = "#91919171";
-    ctx.fillRect(0, 0, 600, 600);
+    ctx.fillRect(-5, -5, 610, 610);
   }
   requestAnimationFrame(tick);
 }
@@ -711,4 +710,5 @@ document.getElementById("start")!.addEventListener("click", () => {
   (<HTMLButtonElement>document.getElementById("start")!).disabled = true;
   modeElement.disabled = true;
   active = true;
+  ctx.clearRect(-5, -5, 710, 610);
 });
