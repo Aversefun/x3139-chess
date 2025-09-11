@@ -50,7 +50,7 @@ namespace Color {
     switch (color) {
       case Color.Black:
         return Color.White;
-    
+
       case Color.White:
         return Color.Black;
     }
@@ -135,8 +135,8 @@ function get_square(sq: Square): [Piece, Color] | null {
 function get_squares(tile: Tile): FixedLengthArray<FixedLengthArray<[Piece, Color] | null, 2>, 2> {
   const base: Square = [tile[0] * 2, tile[1] * 2];
   return [
-    [get_square(base), get_square([base[0]+1, base[1]])],
-    [get_square([base[0], base[1]+1]), get_square([base[0]+1, base[1]+1])],
+    [get_square(base), get_square([base[0] + 1, base[1]])],
+    [get_square([base[0], base[1] + 1]), get_square([base[0] + 1, base[1] + 1])],
   ];
 }
 
@@ -147,9 +147,9 @@ function set_square(sq: Square, piece: [Piece, Color] | null) {
 function set_squares(tile: Tile, pieces: FixedLengthArray<FixedLengthArray<[Piece, Color] | null, 2>, 2>) {
   const base: Square = [tile[0] * 2, tile[1] * 2];
   set_square(base, pieces[0][0]);
-  set_square([base[0]+1, base[1]], pieces[0][1]);
-  set_square([base[0], base[1]+1], pieces[1][0]);
-  set_square([base[0]+1, base[1]+1], pieces[1][1]);
+  set_square([base[0] + 1, base[1]], pieces[0][1]);
+  set_square([base[0], base[1] + 1], pieces[1][0]);
+  set_square([base[0] + 1, base[1] + 1], pieces[1][1]);
 }
 
 function copy_squares(from: Tile, to: Tile) {
@@ -208,7 +208,72 @@ function squares_equal(square1: Square, square2: Square): boolean {
 
 function flip_board() {
   squares.reverse();
-  empty_location = [empty_location[0], 3-empty_location[1]];
+  empty_location = [empty_location[0], 3 - empty_location[1]];
+}
+
+function get_allowed_moves(piece: [Piece, Color], from: Square): Square[] {
+  var allowed_movements: Square[] = [];
+
+  console.log(from);
+
+  const max_dist = 7;
+
+  switch (piece[0]) {
+    case Piece.Pawn:
+      switch (piece[1]) {
+        case Color.Black:
+          allowed_movements = [[0, 1], [0, 2]];
+          break;
+      
+        case Color.White:
+          allowed_movements = [[0, -1], [0, -2]];
+          break;
+      }
+      break;
+
+    case Piece.Bishop:
+      for (let i = 0; i < max_dist; i++) {
+        allowed_movements.push([i, i], [-i, -i], [i, -i], [-i, i]);
+      }
+      break;
+
+    case Piece.Knight:
+      allowed_movements = [[2, 1], [2, -1], [1, 2], [-1, 2], [-2, 1], [-2, -1], [1, -2], [-1, -2]];
+      break;
+
+    case Piece.Rook:
+      for (let i = 0; i < max_dist; i++) {
+        allowed_movements.push([i, 0], [0, i], [-i, 0], [0, -i]);
+      }
+      break;
+
+    case Piece.Queen:
+      for (let i = 0; i < max_dist; i++) {
+        allowed_movements.push([i, 0], [0, i], [-i, 0], [0, -i]);
+        allowed_movements.push([i, i], [-i, -i], [i, -i], [-i, i]);
+      }
+      break;
+
+    case Piece.King:
+      allowed_movements.push([1, 0], [0, 1], [-1, 0], [0, -1]);
+      allowed_movements.push([1, 1], [-1, -1], [1, -1], [-1, 1]);
+      break;
+  }
+
+  allowed_movements = allowed_movements
+    .map((v) => <Square>[v[0] + from[0], v[1] + from[1]])
+    .filter((v) =>
+      {
+        console.log(v);
+        return v[0] < 8 && v[1] < 8 && v[0] >= 0 && v[1] >= 0 && (get_square(v) === null || get_square(v)![1] !== turn)
+        && get_tile(v) !== empty_location;
+      });
+
+  return allowed_movements;
+}
+
+function is_move_allowed(piece: [Piece, Color], from: Square, to: Square): boolean {
+  return get_allowed_moves(piece, from).filter((v) => squares_equal(v, to)).length > 0
 }
 
 function tile_to_offset(tile: Tile): CanvasPosition {
@@ -251,12 +316,23 @@ function draw_piece(square: Square, piece: [Piece, Color]) {
 }
 
 var highlight: Square | null = null;
+var indicators: Square[] = [];
 
 function draw_highlight(square: Square) {
   let pos = square_to_offset(square);
 
   ctx.strokeStyle = "#e4e31d";
   ctx.strokeRect(pos[0] - 1, pos[1] + 1, 75, 75);
+}
+
+function draw_indicator(square: Square) {
+  let pos = square_to_offset(square);
+
+  ctx.fillStyle = "#9d9d9d7c";
+  ctx.beginPath();
+  ctx.arc(pos[0] + (45*(4/5)), pos[1] + (45*(4/5)), 45/2, 0, 2 * Math.PI);
+  ctx.fill();
+  ctx.closePath();
 }
 
 function draw_all() {
@@ -283,6 +359,11 @@ function draw_all() {
     }
     draw_tile_outline(tile);
   }
+
+  for (const indicator of indicators) {
+    draw_indicator(indicator);
+  }
+
   if (!!highlight) {
     draw_highlight(highlight);
   }
@@ -325,10 +406,14 @@ board.addEventListener('click', function (event) {
   if (squareToMove === null && ((get_square(square) !== null && get_square(square)![1] == turn && ((!has_moved_piece && move_piece_and_tile) || !move_piece_and_tile)) || ((move_dir(tile) && ((move_piece_and_tile && !has_moved_tile) || !move_piece_and_tile)) && (get_squares(tile).some((v) => v.some((v) => v !== null && v[1] === turn)) || can_move_all)))) {
     squareToMove = square;
     highlight = square;
+    if (get_square(square) !== null) {
+      indicators = get_allowed_moves(get_square(square)!, square);
+    }
   } else if (squareToMove !== null && squares_equal(square, squareToMove)) {
     squareToMove = null;
     highlight = null;
-  } else if (squareToMove !== null && !squares_equal(tile, empty_location) && ((!has_moved_piece && move_piece_and_tile) || !move_piece_and_tile)) {
+    indicators = [];
+  } else if (squareToMove !== null && !squares_equal(tile, empty_location) && ((!has_moved_piece && move_piece_and_tile) || !move_piece_and_tile) && is_move_allowed(get_square(squareToMove)!, squareToMove, square)) {
     const piece = get_square(squareToMove);
     set_square(square, piece);
     set_square(squareToMove, null);
@@ -359,11 +444,11 @@ document.getElementById("start")!.addEventListener("click", () => {
   switch (mode) {
     case Mode.Default:
       break;
-  
+
     case Mode.Multi:
       move_piece_and_tile = true;
       break;
-    
+
     case Mode.Omni:
       can_move_all = true;
       break;
@@ -373,7 +458,7 @@ document.getElementById("start")!.addEventListener("click", () => {
       move_piece_and_tile = true;
       break;
   }
-  
+
   (<HTMLButtonElement>document.getElementById("start")!).disabled = true;
   modeElement.disabled = true;
   active = true;
