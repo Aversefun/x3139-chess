@@ -116,7 +116,7 @@ function get_location_in_pieces(piece: [Piece, Color]): CanvasPosition {
   return base_loc;
 }
 
-var squares: FixedLengthArray<FixedLengthArray<[Piece, Color] | null, 8>, 8> = [
+const starting_squares: FixedLengthArray<FixedLengthArray<[Piece, Color] | null, 8>, 8> = [
   [[Piece.Rook, Color.Black], [Piece.Knight, Color.Black], [Piece.Bishop, Color.Black], [Piece.Queen, Color.Black], [Piece.King, Color.Black], [Piece.Bishop, Color.Black], [Piece.Knight, Color.Black], [Piece.Rook, Color.Black]],
   [[Piece.Pawn, Color.Black], [Piece.Pawn, Color.Black], [Piece.Pawn, Color.Black], [Piece.Pawn, Color.Black], [Piece.Pawn, Color.Black], [Piece.Pawn, Color.Black], [Piece.Pawn, Color.Black], [Piece.Pawn, Color.Black]],
   [null, null, null, null, null, null, null, null],
@@ -127,7 +127,9 @@ var squares: FixedLengthArray<FixedLengthArray<[Piece, Color] | null, 8>, 8> = [
   [[Piece.Rook, Color.White], [Piece.Knight, Color.White], [Piece.Bishop, Color.White], [Piece.Queen, Color.White], [Piece.King, Color.White], [Piece.Bishop, Color.White], [Piece.Knight, Color.White], [Piece.Rook, Color.White]],
 ];
 
-var moved_pieces: FixedLengthArray<FixedLengthArray<boolean, 8>, 8> = [
+var squares = starting_squares;
+
+const starting_moved_pieces: FixedLengthArray<FixedLengthArray<boolean, 8>, 8> = [
   [false, false, false, false, false, false, false, false],
   [false, false, false, false, false, false, false, false],
   [true, true, true, true, true, true, true, true],
@@ -137,6 +139,8 @@ var moved_pieces: FixedLengthArray<FixedLengthArray<boolean, 8>, 8> = [
   [false, false, false, false, false, false, false, false],
   [false, false, false, false, false, false, false, false],
 ];
+
+var moved_pieces = starting_moved_pieces;
 
 var empty_location: Tile = [3, 2];
 
@@ -642,12 +646,14 @@ function switch_turn() {
   if (in_checkmate(turn)) {
     checkmate = true;
     turn = Color.opposite(turn);
+    (<HTMLButtonElement>document.getElementById("start")!).disabled = false;
+    (<HTMLSelectElement>document.getElementById("mode")!).disabled = false;
   }
 }
 
 tick(0);
 board.addEventListener('click', function (event) {
-  if (!active) {
+  if (!active || checkmate) {
     return;
   }
   const square = offset_to_square([Math.floor(event.pageX - canvasLeft), Math.floor(event.pageY - canvasTop)]);
@@ -742,6 +748,9 @@ board.addEventListener('click', function (event) {
 }, false);
 
 document.getElementById("start")!.addEventListener("click", () => {
+  squares = starting_squares;
+  moved_pieces = starting_moved_pieces;
+  
   const modeElement = <HTMLSelectElement>document.getElementById("mode")!;
   const mode = <Mode>modeElement.value;
   console.log(mode);
