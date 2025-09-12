@@ -684,6 +684,16 @@ board.addEventListener('click', function (event) {
   } else if (squareToMove !== null && squares_equal(square, squareToMove)) {
     squareToMove = null;
     reset_indicators();
+  } else if (squareToMove !== null && !is_move_allowed(get_square(squareToMove)!, squareToMove, square) && !squares_equal(tile, empty_location) && (get_square(square) !== null && get_square(square)![1] === turn) || !!move_dir(get_tile(square))) {
+    reset_indicators();
+    squareToMove = square;
+    highlight = square;
+    if (get_square(square) !== null && !has_moved_piece) {
+      indicators = get_allowed_moves(get_square(square)!, square);
+    }
+    if (!has_moved_tile) {
+      show_tile_indicator = !!move_dir(tile);
+    }
   } else if (squareToMove !== null && !squares_equal(tile, empty_location) && ((!has_moved_piece && move_piece_and_tile) || !move_piece_and_tile) && is_move_allowed(get_square(squareToMove)!, squareToMove, square)) {
     const piece = get_square(squareToMove);
 
