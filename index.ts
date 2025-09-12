@@ -437,6 +437,7 @@ function get_allowed_moves(piece: [Piece, Color], from: Square, ignore_check: bo
       }
       return !in_check(piece[1], [piece[0], from, v]);
     })
+    .filter((v) => get_square(v) === null || get_square(v)![0] !== Piece.King);
 
   return allowed_movements;
 }
@@ -640,14 +641,23 @@ function switch_turn() {
   turn = Color.opposite(turn);
   has_moved_piece = false;
   has_moved_tile = false;
-  indicators = [];
-  show_tile_indicator = false;
+  
+  reset_indicators();
 
-  if (in_checkmate(turn)) {
-    checkmate = true;
+  if (checkmate) {
     turn = Color.opposite(turn);
     (<HTMLButtonElement>document.getElementById("start")!).disabled = false;
     (<HTMLSelectElement>document.getElementById("mode")!).disabled = false;
+  }
+}
+
+function reset_indicators() {
+  indicators = [];
+  show_tile_indicator = false;
+  highlight = null;
+
+  if (in_checkmate(turn)) {
+    checkmate = true;
   }
 }
 
@@ -668,12 +678,12 @@ board.addEventListener('click', function (event) {
     if (get_square(square) !== null && !has_moved_piece) {
       indicators = get_allowed_moves(get_square(square)!, square);
     }
-    show_tile_indicator = !!move_dir(tile);
+    if (!has_moved_tile) {
+      show_tile_indicator = !!move_dir(tile);
+    }
   } else if (squareToMove !== null && squares_equal(square, squareToMove)) {
     squareToMove = null;
-    highlight = null;
-    indicators = [];
-    show_tile_indicator = false;
+    reset_indicators();
   } else if (squareToMove !== null && !squares_equal(tile, empty_location) && ((!has_moved_piece && move_piece_and_tile) || !move_piece_and_tile) && is_move_allowed(get_square(squareToMove)!, squareToMove, square)) {
     const piece = get_square(squareToMove);
 
@@ -721,11 +731,8 @@ board.addEventListener('click', function (event) {
     set_square(squareToMove, null);
 
     squareToMove = null;
-    highlight = null;
-    show_tile_indicator = false;
-    //flip_board();
     has_moved_piece = true;
-    indicators = [];
+    reset_indicators();
     if ((move_piece_and_tile && has_moved_tile) || !move_piece_and_tile) {
       switch_turn();
     }
@@ -737,9 +744,7 @@ board.addEventListener('click', function (event) {
       return;
     }
     squareToMove = null;
-    highlight = null;
-    show_tile_indicator = false;
-    //flip_board();
+    reset_indicators();
     has_moved_tile = true;
     if ((move_piece_and_tile && has_moved_piece) || !move_piece_and_tile) {
       switch_turn();
