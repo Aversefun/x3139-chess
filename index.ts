@@ -258,7 +258,7 @@ function get_allowed_moves(piece: [Piece, Color], from: Square, ignore_check: bo
     return [];
   }
 
-  console.log(from);
+  // console.log(from);
 
   const max_dist = 8;
 
@@ -427,7 +427,7 @@ function get_allowed_moves(piece: [Piece, Color], from: Square, ignore_check: bo
   allowed_movements = allowed_movements
     .map((v) => <Square>[v[0] + from[0], v[1] + from[1]])
     .filter((v) => {
-      console.log(v);
+      // console.log(v);
       return v[0] < 8 && v[1] < 8 && v[0] >= 0 && v[1] >= 0 && (get_square(v) === null || get_square(v)![1] !== piece[1])
         && !squares_equal(get_tile(v), empty_location);
     })
@@ -443,7 +443,7 @@ function get_allowed_moves(piece: [Piece, Color], from: Square, ignore_check: bo
 }
 
 function is_move_allowed(piece: [Piece, Color], from: Square, to: Square): boolean {
-  return get_allowed_moves(piece, from).filter((v) => squares_equal(v, to)).length > 0
+  return get_allowed_moves(piece, from).filter((v) => squares_equal(v, to)).length > 0;
 }
 
 function in_check(color: Color, after_move: [Piece, Square, Square] | null = null): boolean {
@@ -684,7 +684,8 @@ board.addEventListener('click', function (event) {
   } else if (squareToMove !== null && squares_equal(square, squareToMove)) {
     squareToMove = null;
     reset_indicators();
-  } else if (squareToMove !== null && !is_move_allowed(get_square(squareToMove)!, squareToMove, square) && !squares_equal(tile, empty_location) && (get_square(square) !== null && get_square(square)![1] === turn) || !!move_dir(get_tile(square))) {
+  } else if (squareToMove !== null && !is_move_allowed(get_square(squareToMove)!, squareToMove!, square) && !squares_equal(tile, empty_location) && ((get_square(square) !== null && get_square(square)![1] === turn) || !!move_dir(get_tile(square)))) {
+    console.log(squareToMove, !is_move_allowed(get_square(squareToMove!)!, squareToMove!, square), square);
     reset_indicators();
     squareToMove = square;
     highlight = square;
