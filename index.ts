@@ -437,7 +437,6 @@ function get_allowed_moves(piece: [Piece, Color], from: Square, ignore_check: bo
       }
       return !in_check(piece[1], [piece[0], from, v]);
     })
-    .filter((v) => get_square(v) === null || get_square(v)![0] !== Piece.King);
 
   return allowed_movements;
 }
@@ -736,6 +735,10 @@ board.addEventListener('click', function (event) {
           set_square([squareToMove[0] + 1, squareToMove[1]], null);
         }
       }
+    }
+
+    if (get_square(square) !== null && get_square(square)![0] === Piece.King && get_square(square)![1] === Color.opposite(turn)) {
+      checkmate = true;
     }
 
     set_square(square, piece);
