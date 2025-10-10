@@ -6,7 +6,7 @@
 - En passant
 - Showing available moves
 - Requiring you to get out of check if you are in check
-- Checkmate detection (working on)
+- Checkmate detection (because of the tiles it is possible to capture the king, so this is regarded as a checkmate)
 
 Stuff that will be implemented Soon :tm::
 
